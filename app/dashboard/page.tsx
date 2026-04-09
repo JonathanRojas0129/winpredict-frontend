@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/authStore';
 import api from '@/lib/axios';
 import ModalCrearGrupo from '@/components/ui/ModalCrearGrupo';
+import ModalUnirseGrupo from '@/components/ui/ModalUnirseGrupo';
 
 interface Grupo {
   id: string;
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [modalCrear, setModalCrear] = useState(false);
+  const [modalUnirse, setModalUnirse] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,11 +76,13 @@ export default function DashboardPage() {
           <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             Hola, <strong style={{ color: 'var(--white)' }}>{user.nombre}</strong>
           </span>
-          <button onClick={() => { logout(); router.push('/login'); }} style={{
-            background: 'transparent', border: '1px solid var(--card-border)',
-            color: 'var(--text-muted)', borderRadius: 8, padding: '6px 14px',
-            fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s',
-          }}
+          <button
+            onClick={() => { logout(); router.push('/login'); }}
+            style={{
+              background: 'transparent', border: '1px solid var(--card-border)',
+              color: 'var(--text-muted)', borderRadius: 8, padding: '6px 14px',
+              fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s',
+            }}
             onMouseEnter={e => {
               (e.currentTarget).style.borderColor = 'var(--purple-light)';
               (e.currentTarget).style.color = 'var(--white)';
@@ -111,7 +115,10 @@ export default function DashboardPage() {
             padding: '20px 24px', textAlign: 'center',
           }}>
             <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{stat.icon}</div>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.8rem', fontWeight: 800, color: 'var(--gold)' }}>
+            <div style={{
+              fontFamily: 'Syne, sans-serif', fontSize: '1.8rem',
+              fontWeight: 800, color: 'var(--gold)',
+            }}>
               {stat.value}
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 4 }}>
@@ -127,18 +134,31 @@ export default function DashboardPage() {
         border: '1px solid var(--card-border)',
         borderRadius: 'var(--radius)', padding: '24px',
       }}>
+        {/* Header mis grupos */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.1rem', fontWeight: 700 }}>
             Mis grupos
           </h2>
-          <button onClick={() => setModalCrear(true)} style={{
-            background: 'var(--gold)', color: '#1A0A3C',
-            border: 'none', borderRadius: 8,
-            padding: '8px 18px', fontWeight: 700,
-            fontSize: '0.85rem', cursor: 'pointer',
-          }}>
-            + Crear grupo
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setModalUnirse(true)} style={{
+              background: 'transparent',
+              border: '1px solid var(--purple-mid)',
+              color: 'var(--purple-light)',
+              borderRadius: 8, padding: '8px 18px',
+              fontWeight: 700, fontSize: '0.85rem',
+              cursor: 'pointer',
+            }}>
+              🔑 Unirse
+            </button>
+            <button onClick={() => setModalCrear(true)} style={{
+              background: 'var(--gold)', color: '#1A0A3C',
+              border: 'none', borderRadius: 8,
+              padding: '8px 18px', fontWeight: 700,
+              fontSize: '0.85rem', cursor: 'pointer',
+            }}>
+              + Crear grupo
+            </button>
+          </div>
         </div>
 
         {/* Lista de grupos o estado vacío */}
@@ -199,6 +219,14 @@ export default function DashboardPage() {
         <ModalCrearGrupo
           onClose={() => setModalCrear(false)}
           onCreado={cargarGrupos}
+        />
+      )}
+
+      {/* Modal unirse a grupo */}
+      {modalUnirse && (
+        <ModalUnirseGrupo
+          onClose={() => setModalUnirse(false)}
+          onUnido={cargarGrupos}
         />
       )}
     </div>
