@@ -32,7 +32,7 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await api.post('/auth/register', { nombre, email, password });
+      await api.post('/auth/registro', { nombre, email, password });
       const response = await api.post('/auth/login', { email, password });
       const { access_token, user } = response.data;
       setAuth(user, access_token);
