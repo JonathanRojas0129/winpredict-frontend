@@ -1,10 +1,9 @@
 // app/(auth)/login/page.tsx
-// Página de inicio de sesión
-// crafted by JR ♥
+// crafted by JR ♥  |  fix: hydrate al montar + redirect si ya autenticado
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/axios';
@@ -12,15 +11,27 @@ import useAuthStore from '@/store/authStore';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth } = useAuthStore();
+  const { setAuth, hydrate, hydrated, isAuthenticated } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Hidratar y redirigir si ya hay sesión activa
+  useEffect(() => {
+    hydrate();
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [hydrated, isAuthenticated]);
+
   const handleLogin = async () => {
     setError('');
+    if (!email || !password) { setError('Completa todos los campos'); return; }
     setLoading(true);
 
     try {
@@ -28,8 +39,11 @@ export default function LoginPage() {
       const { access_token, user } = response.data;
       setAuth(user, access_token);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión');
+    } catch (err: unknown) {
+      const detail = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+        : undefined;
+      setError(typeof detail === 'string' ? detail : 'Error al iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -42,7 +56,6 @@ export default function LoginPage() {
       background: 'var(--bg)',
       padding: '24px',
     }}>
-      {/* Glow de fondo */}
       <div style={{
         position: 'fixed', width: 600, height: 600,
         background: 'radial-gradient(circle, rgba(124,79,224,0.2) 0%, transparent 70%)',
@@ -50,7 +63,6 @@ export default function LoginPage() {
         pointerEvents: 'none',
       }} />
 
-      {/* Card */}
       <div style={{
         background: 'var(--card-bg)',
         border: '1px solid var(--card-border)',
@@ -59,29 +71,21 @@ export default function LoginPage() {
         width: '100%', maxWidth: 420,
         position: 'relative',
       }}>
-        {/* Logo */}
         <div style={{
           textAlign: 'center', marginBottom: 32,
-          fontFamily: 'var(--font-display, Syne)',
+          fontFamily: 'var(--font-display, Syne, sans-serif)',
           fontSize: '1.8rem', fontWeight: 800,
         }}>
           Win<span style={{ color: 'var(--gold)' }}>★</span>Predict
         </div>
 
-        <h1 style={{
-          fontSize: '1.3rem', fontWeight: 700,
-          marginBottom: 6, textAlign: 'center',
-        }}>
+        <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 6, textAlign: 'center' }}>
           Bienvenido de vuelta
         </h1>
-        <p style={{
-          color: 'var(--text-muted)', fontSize: '0.9rem',
-          textAlign: 'center', marginBottom: 32,
-        }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', marginBottom: 32 }}>
           Ingresa a tu cuenta para continuar
         </p>
 
-        {/* Email */}
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
             Correo electrónico
@@ -97,14 +101,12 @@ export default function LoginPage() {
               border: '1px solid var(--card-border)',
               borderRadius: 10, color: 'var(--white)',
               fontSize: '0.95rem', outline: 'none',
-              transition: 'border-color 0.2s',
             }}
             onFocus={e => e.target.style.borderColor = 'var(--purple-light)'}
             onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
           />
         </div>
 
-        {/* Password */}
         <div style={{ marginBottom: 24 }}>
           <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
             Contraseña
@@ -120,7 +122,6 @@ export default function LoginPage() {
               border: '1px solid var(--card-border)',
               borderRadius: 10, color: 'var(--white)',
               fontSize: '0.95rem', outline: 'none',
-              transition: 'border-color 0.2s',
             }}
             onFocus={e => e.target.style.borderColor = 'var(--purple-light)'}
             onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
@@ -128,7 +129,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Error */}
         {error && (
           <div style={{
             background: 'rgba(255,80,80,0.1)',
@@ -141,7 +141,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Botón login */}
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -151,17 +150,12 @@ export default function LoginPage() {
             color: '#1A0A3C', border: 'none',
             borderRadius: 10, fontWeight: 700,
             fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
           }}
         >
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
 
-        {/* Link a registro */}
-        <p style={{
-          textAlign: 'center', marginTop: 24,
-          fontSize: '0.88rem', color: 'var(--text-muted)',
-        }}>
+        <p style={{ textAlign: 'center', marginTop: 24, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
           ¿No tienes cuenta?{' '}
           <Link href="/register" style={{ color: 'var(--purple-light)', fontWeight: 600, textDecoration: 'none' }}>
             Regístrate gratis

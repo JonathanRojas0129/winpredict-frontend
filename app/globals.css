@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  /* ── Design tokens WinPredict ─────────────────────────────────────── */
   --purple:        #5B2FD4;
   --purple-mid:    #7C4FE0;
   --purple-light:  #9B72F5;
@@ -13,6 +14,9 @@
   --card-bg:       #1E1040;
   --card-border:   #2E1F55;
   --radius:        16px;
+
+  /* Fuentes: vars inyectadas por Next.js font en layout.tsx */
+  /* --font-display y --font-body vienen de next/font/google */
 }
 
 * {
@@ -24,6 +28,21 @@
 body {
   background: var(--bg);
   color: var(--white);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display, 'Syne', sans-serif);
+}
+
+/* Ocultar flechas de inputs numéricos */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
