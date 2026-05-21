@@ -9,6 +9,7 @@ import { useRouter, useParams } from 'next/navigation';
 import useAuthStore from '@/store/authStore';
 import api from '@/lib/axios';
 import BottomNav from '@/components/layout/BottomNav';
+import { getApiErrorMessage } from '@/lib/errors';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────
 
@@ -57,6 +58,14 @@ interface GrupoInfo {
   mi_posicion: number | null;
 }
 
+interface SolicitudIngreso {
+  id: string;
+  user_id: string;
+  nombre: string;
+  email: string;
+  solicitado_en: string;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
 function formatFecha(iso: string) {
@@ -94,11 +103,14 @@ export default function GrupoPage() {
 
   const { user, hydrated, hydrate } = useAuthStore();
 
-  const [tab, setTab]                 = useState<'ranking' | 'partidos'>('ranking');
+  const [tab, setTab]                 = useState<'ranking' | 'partidos' | 'solicitudes'>('ranking');
   const [grupo, setGrupo]             = useState<GrupoInfo | null>(null);
   const [ranking, setRanking]         = useState<Participante[]>([]);
   const [partidos, setPartidos]       = useState<Partido[]>([]);
   const [pronosticos, setPronosticos] = useState<Record<string, Pronostico>>({});
+  const [solicitudes, setSolicitudes] = useState<SolicitudIngreso[]>([]);
+  const [solicitudMsg, setSolicitudMsg] = useState('');
+  const [accionSolicitudId, setAccionSolicitudId] = useState<string | null>(null);
   const [loading, setLoading]         = useState(true);
 
   useEffect(() => { hydrate(); }, [hydrate]);
@@ -109,6 +121,20 @@ export default function GrupoPage() {
     cargarTodo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
+
+  const cargarSolicitudes = async (esAdmin: boolean) => {
+    if (!esAdmin) {
+      setSolicitudes([]);
+      return;
+    }
+    try {
+      const res = await api.get(`/grupos/${grupoId}/solicitudes`);
+      setSolicitudes(res.data.solicitudes ?? []);
+    } catch (err) {
+      console.error('Error cargando solicitudes:', err);
+      setSolicitudes([]);
+    }
+  };
 
   const cargarTodo = async () => {
     try {
@@ -124,7 +150,6 @@ export default function GrupoPage() {
       setGrupo(infoGrupo);
       setRanking(rankingRes.data);
 
-      // Solo partidos finalizados
       setPartidos(partidosRes.data.filter((p: Partido) => p.estado === 'finalizado'));
 
       const pronosMap: Record<string, Pronostico> = {};
@@ -132,12 +157,62 @@ export default function GrupoPage() {
         pronosMap[p.partido_id] = p;
       }
       setPronosticos(pronosMap);
+
+      await cargarSolicitudes(infoGrupo.mi_rol === 'admin');
     } catch (err) {
+      const msg = getApiErrorMessage(err, '');
+      if (msg.includes('pendiente de aprobación') || msg.includes('fue rechazada')) {
+        router.push('/dashboard');
+        return;
+      }
       console.error('Error cargando grupo:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const aprobarSolicitud = async (participanteId: string) => {
+    setAccionSolicitudId(participanteId);
+    setSolicitudMsg('');
+    try {
+      const res = await api.patch(
+        `/grupos/${grupoId}/solicitudes/${participanteId}/aprobar`,
+      );
+      setSolicitudMsg(res.data.message || 'Usuario aprobado');
+      await cargarTodo();
+      setTab('ranking');
+    } catch (err) {
+      setSolicitudMsg(getApiErrorMessage(err, 'No se pudo aprobar la solicitud'));
+    } finally {
+      setAccionSolicitudId(null);
+    }
+  };
+
+  const rechazarSolicitud = async (participanteId: string) => {
+    setAccionSolicitudId(participanteId);
+    setSolicitudMsg('');
+    try {
+      const res = await api.patch(
+        `/grupos/${grupoId}/solicitudes/${participanteId}/rechazar`,
+      );
+      setSolicitudMsg(res.data.message || 'Usuario rechazado');
+      await cargarSolicitudes(true);
+    } catch (err) {
+      setSolicitudMsg(getApiErrorMessage(err, 'No se pudo rechazar la solicitud'));
+    } finally {
+      setAccionSolicitudId(null);
+    }
+  };
+
+  function formatSolicitudFecha(iso: string) {
+    return new Date(iso).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
   const card: React.CSSProperties = {
     background: 'var(--card-bg)',
@@ -259,15 +334,81 @@ export default function GrupoPage() {
         </div>
       )}
 
+      {/* Aviso solicitudes pendientes (admin) */}
+      {esAdmin && solicitudes.length > 0 && tab !== 'solicitudes' && (
+        <button
+          type="button"
+          onClick={() => setTab('solicitudes')}
+          style={{
+            width: '100%',
+            marginBottom: 16,
+            padding: '14px 18px',
+            borderRadius: 12,
+            border: '1px solid rgba(245,200,66,0.45)',
+            background: 'rgba(245,200,66,0.1)',
+            color: 'var(--gold)',
+            fontWeight: 700,
+            fontSize: '0.88rem',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          🔔 {solicitudes.length} solicitud{solicitudes.length !== 1 ? 'es' : ''} de ingreso pendiente{solicitudes.length !== 1 ? 's' : ''} — toca para revisar
+        </button>
+      )}
+
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {(['ranking', 'partidos'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            style={{ padding: '10px 24px', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: 'none', background: tab === t ? 'var(--purple-mid)' : 'var(--card-bg)', color: tab === t ? 'var(--white)' : 'var(--text-muted)', transition: 'all 0.2s' }}>
-            {t === 'ranking' ? '📊 Ranking' : '✅ Resultados'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {(['ranking', 'partidos', ...(esAdmin ? (['solicitudes'] as const) : [])] as const).map(t => (
+          <button key={t} onClick={() => { setTab(t); setSolicitudMsg(''); }}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              border: 'none',
+              background: tab === t ? 'var(--purple-mid)' : 'var(--card-bg)',
+              color: tab === t ? 'var(--white)' : 'var(--text-muted)',
+              transition: 'all 0.2s',
+              position: 'relative',
+            }}>
+            {t === 'ranking' && '📊 Ranking'}
+            {t === 'partidos' && '✅ Resultados'}
+            {t === 'solicitudes' && (
+              <>
+                👤 Solicitudes
+                {solicitudes.length > 0 && (
+                  <span style={{
+                    marginLeft: 6,
+                    background: '#F5C842',
+                    color: '#1A0A3C',
+                    borderRadius: 100,
+                    padding: '1px 7px',
+                    fontSize: '0.7rem',
+                  }}>
+                    {solicitudes.length}
+                  </span>
+                )}
+              </>
+            )}
           </button>
         ))}
       </div>
+
+      {solicitudMsg && (
+        <div style={{
+          marginBottom: 16,
+          padding: '12px 16px',
+          borderRadius: 10,
+          background: 'rgba(124,79,224,0.15)',
+          border: '1px solid rgba(124,79,224,0.35)',
+          fontSize: '0.85rem',
+          color: 'var(--purple-light)',
+        }}>
+          {solicitudMsg}
+        </div>
+      )}
 
       {/* Tab Ranking */}
       {tab === 'ranking' && (
@@ -299,6 +440,106 @@ export default function GrupoPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Solicitudes — solo admin */}
+      {tab === 'solicitudes' && esAdmin && (
+        <div style={card}>
+          <h2 style={{
+            fontFamily: 'var(--font-display, Syne, sans-serif)',
+            fontSize: '1rem',
+            fontWeight: 700,
+            marginBottom: 8,
+          }}>
+            Solicitudes de ingreso
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+            Aprueba o rechaza a quienes pidieron unirse con tu código de invitación.
+          </p>
+          {solicitudes.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+              No hay solicitudes pendientes
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {solicitudes.map(s => {
+                const procesando = accionSolicitudId === s.id;
+                return (
+                  <div
+                    key={s.id}
+                    style={{
+                      padding: '14px',
+                      borderRadius: 12,
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid var(--card-border)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                      <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: 'rgba(124,79,224,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                      }}>
+                        {inicialesAvatar(s.nombre)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>{s.nombre}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.email}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                          Solicitó: {formatSolicitudFecha(s.solicitado_en)}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        disabled={procesando}
+                        onClick={() => aprobarSolicitud(s.id)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: 10,
+                          border: 'none',
+                          background: procesando ? 'var(--card-border)' : '#4CAF50',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: procesando ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {procesando ? '...' : '✓ Aprobar'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={procesando}
+                        onClick={() => rechazarSolicitud(s.id)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,80,80,0.4)',
+                          background: 'transparent',
+                          color: '#ff6b6b',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: procesando ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
