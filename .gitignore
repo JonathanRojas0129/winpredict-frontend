@@ -1,7 +1,8 @@
-﻿# Variables de entorno
+﻿# Secretos — nunca subir .env reales (solo plantillas *.example)
 .env
-.env.local
-.env*.local
+.env.*
+!.env.example
+!.env.local.example
 
 # Dependencies
 node_modules/
