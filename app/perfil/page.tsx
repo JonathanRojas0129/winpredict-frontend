@@ -270,6 +270,27 @@ export default function PerfilPage() {
         </div>
       )}
 
+      {/* Seguridad de la cuenta */}
+      <button
+        type="button"
+        onClick={() => router.push('/perfil/cambiar-contrasena')}
+        style={{
+          width: '100%',
+          background: 'rgba(193, 164, 97, 0.08)',
+          border: '1px solid rgba(193, 164, 97, 0.35)',
+          color: 'var(--gold)',
+          borderRadius: 12,
+          padding: '14px',
+          fontWeight: 700,
+          fontSize: '0.88rem',
+          cursor: 'pointer',
+          marginBottom: 12,
+          transition: 'all 0.15s',
+        }}
+      >
+        Cambiar contraseña
+      </button>
+
       {/* Cerrar sesión */}
       <button
         onClick={() => { logout(); router.push('/login'); }}
