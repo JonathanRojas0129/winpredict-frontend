@@ -185,21 +185,22 @@ export default function PartidosPage() {
     }
   }, []);
 
-  const cargarSugerenciaPartido = useCallback(async (partidoId: string) => {
+  const cargarTodasLasSugerencias = useCallback(async () => {
     try {
-      const res = await api.get(`/sugerencias/${partidoId}`);
-      setSugerencias(prev => ({
-        ...prev,
-        [partidoId]: {
-          partido_id:      partidoId,
-          goles_local:     res.data.goles_local,
-          goles_visitante: res.data.goles_visitante,
-          probabilidad:    res.data.confianza,
-          top3:            res.data.top3,
-          probabilidades:  res.data.probabilidades,
-        },
-      }));
-    } catch { /* sin sugerencia o no PRO */ }
+        const res = await api.get('/sugerencias/');
+        const map: Record<string, SugerenciaPro> = {};
+        for (const s of res.data) {
+            map[s.partido_id] = {
+                partido_id:      s.partido_id,
+                goles_local:     s.goles_local,
+                goles_visitante: s.goles_visitante,
+                probabilidad:    s.confianza,
+                top3:            s.top3,           // ← agregar
+                probabilidades:  s.probabilidades, // ← agregar
+            };
+        }
+        setSugerencias(map);
+    } catch { /* no PRO o error */ }
   }, []);
 
   useEffect(() => {
@@ -209,14 +210,8 @@ export default function PartidosPage() {
 
   useEffect(() => {
     if (!user?.es_pro || partidos.length === 0) return;
-    const abiertos = partidos.filter(
-      p => p.estado !== 'finalizado' &&
-           p.fase === 'grupos' &&
-           new Date() < new Date(p.cierre_pronosticos),
-    );
-    abiertos.forEach(p => cargarSugerenciaPartido(p.id));
-
-  }, [partidos, user?.es_pro, cargarSugerenciaPartido]);
+    cargarTodasLasSugerencias();
+  }, [partidos, user?.es_pro, cargarTodasLasSugerencias]);
 
   const guardarPronostico = async (partidoId: string, fase: string) => {
     const input = inputs[partidoId];
@@ -423,7 +418,7 @@ export default function PartidosPage() {
         ) : abierto ? (
           <div>
             {/* Sugerencia PRO */}
-            {user.es_pro && sug && (
+            {user.es_pro && sug && partido.fase === 'grupos' && (
               <div style={{ background: C.goldMuted, border: `1px solid rgba(245,200,66,0.25)`, borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
                 <div style={{ fontSize: '0.65rem', color: C.gold, fontWeight: 700, marginBottom: 8, letterSpacing: 0.5 }}>
                   ⭐ PREDICCIÓN ESTADÍSTICA IA
