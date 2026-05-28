@@ -131,8 +131,11 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
   };
 
   const updateRegla = (key: keyof Reglas, val: string) => {
+    setReglas(r => ({ ...r, [key]: val }));
     const num = parseInt(val);
-    setReglas(r => ({ ...r, [key]: isNaN(num) ? 0 : Math.min(10, Math.max(0, num)) }));
+    if (!isNaN(num)) {
+      setReglas(r => ({ ...r, [key]: Math.min(10, Math.max(0, num)) }));
+    }
   };
 
   const updateDist = (key: keyof Dist, val: string) => {
@@ -167,7 +170,7 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
         background: 'var(--card-bg)',
         border: '1px solid var(--card-border)',
         borderRadius: 'var(--radius)',
-        padding: '28px 28px 24px',
+        padding: '28px 28px 90px',
         width: '92%', maxWidth: 500,
         maxHeight: '88vh', overflowY: 'auto',
         zIndex: 51,
@@ -230,7 +233,7 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
               </label>
               <input type="number" min="2" max="500" value={maxParticipantes}
                 onChange={e => setMaxParticipantes(e.target.value)} style={inputStyle}
-                onFocus={e => e.target.style.borderColor = 'var(--purple-light)'}
+                onFocus={e => { e.target.select(); e.target.style.borderColor = 'var(--gold)'; }}
                 onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
               />
             </div>
@@ -245,7 +248,7 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
                   onChange={e => setPremioValor(e.target.value)}
                   placeholder="0"
                   style={{ ...inputStyle, marginTop: 0, flex: 1 }}
-                  onFocus={e => e.target.style.borderColor = 'var(--purple-light)'}
+                  onFocus={e => { e.target.select(); e.target.style.borderColor = 'var(--purple-light)'; }}
                   onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
                 />
                 <select value={premioMoneda} onChange={e => setPremioMoneda(e.target.value)}
@@ -335,7 +338,7 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
                       fontSize: '1rem', fontWeight: 700, outline: 'none',
                       textAlign: 'center',
                     }}
-                    onFocus={e => e.target.style.borderColor = 'var(--gold)'}
+                    onFocus={e => { e.target.select(); e.target.style.borderColor = 'var(--gold)'; }}
                     onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
                   />
                 </div>
@@ -403,7 +406,7 @@ export default function ModalCrearGrupo({ onClose, onCreado }: Props) {
                           fontSize: '1rem', fontWeight: 700,
                           outline: 'none', textAlign: 'center',
                         }}
-                        onFocus={e => e.target.style.borderColor = 'var(--gold)'}
+                        onFocus={e => { e.target.select(); e.target.style.borderColor = 'var(--gold)'; }}
                         onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
                       />
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>%</span>
