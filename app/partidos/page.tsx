@@ -292,7 +292,9 @@ export default function PartidosPage() {
     const lista = partidosFiltrados.filter(p => p.fase === fase);
     if (lista.length > 0) acc[fase] = lista;
     return acc;
-  }, {});
+  }, {}); 
+
+
 
   const agruparPorSubgrupo = (lista: Partido[]) =>
     lista.reduce<Record<string, Partido[]>>((acc, p) => {
@@ -384,7 +386,7 @@ export default function PartidosPage() {
                   </span>
                 )}
               </div>
-              {pronos.puntos_obtenidos !== null && (
+              {pronos.puntos_obtenidos !== null ? (
                 <span style={{
                   background: pronos.puntos_obtenidos > 0 ? C.goldMuted : 'rgba(255,82,82,0.1)',
                   border: `1px solid ${pronos.puntos_obtenidos > 0 ? 'rgba(245,200,66,0.3)' : 'rgba(255,82,82,0.25)'}`,
@@ -393,6 +395,16 @@ export default function PartidosPage() {
                   fontSize: '0.78rem', fontWeight: 700,
                 }}>
                   {pronos.puntos_obtenidos > 0 ? `+${pronos.puntos_obtenidos} pts` : '0 pts'}
+                </span>
+              ) : (
+                <span style={{
+                  background: 'rgba(124,79,224,0.12)',
+                  border: '1px solid rgba(124,79,224,0.35)',
+                  color: C.purpleLight,
+                  borderRadius: 8, padding: '3px 12px',
+                  fontSize: '0.72rem', fontWeight: 600,
+                }}>
+                  Puntos en proceso…
                 </span>
               )}
             </div>
@@ -586,7 +598,7 @@ export default function PartidosPage() {
                 {FASES_LABEL[fase] ?? fase}
               </div>
 
-              {fase === 'grupos' ? (
+              {fase === 'grupos' && filtro !== 'programado'? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {Object.entries(agruparPorSubgrupo(listaFase))
                     .sort(([a], [b]) => a.localeCompare(b))

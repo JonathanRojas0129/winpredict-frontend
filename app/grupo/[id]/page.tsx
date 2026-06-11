@@ -56,6 +56,17 @@ interface GrupoInfo {
   mi_rol: string;
   mis_puntos: number;
   mi_posicion: number | null;
+  // Reglas de puntuación
+  pts_marcador_exacto: number;
+  pts_ganador: number;
+  pts_empate: number;
+  pts_gol: number;
+  pts_prediccion_unica: number;
+  bono_dieciseisavos: number;
+  bono_octavos: number;
+  bono_cuartos: number;
+  bono_semifinales: number;
+  bono_final: number;
 }
 
 interface SolicitudIngreso {
@@ -103,7 +114,7 @@ export default function GrupoPage() {
 
   const { user, hydrated, hydrate } = useAuthStore();
 
-  const [tab, setTab]                 = useState<'ranking' | 'partidos' | 'solicitudes'>('ranking');
+  const [tab, setTab]                 = useState<'ranking' | 'partidos' | 'reglas' | 'solicitudes'>('ranking');
   const [grupo, setGrupo]             = useState<GrupoInfo | null>(null);
   const [ranking, setRanking]         = useState<Participante[]>([]);
   const [partidos, setPartidos]       = useState<Partido[]>([]);
@@ -359,7 +370,7 @@ export default function GrupoPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {(['ranking', 'partidos', ...(esAdmin ? (['solicitudes'] as const) : [])] as const).map(t => (
+        {(['ranking', 'partidos', 'reglas', ...(esAdmin ? (['solicitudes'] as const) : [])] as const).map(t => (
           <button key={t} onClick={() => { setTab(t); setSolicitudMsg(''); }}
             style={{
               padding: '10px 16px',
@@ -375,6 +386,7 @@ export default function GrupoPage() {
             }}>
             {t === 'ranking' && '📊 Ranking'}
             {t === 'partidos' && '✅ Resultados'}
+            {t === 'reglas'      && '📋 Reglas'}
             {t === 'solicitudes' && (
               <>
                 👤 Solicitudes
@@ -615,7 +627,66 @@ export default function GrupoPage() {
           )}
         </div>
       )}
+      {/* Tab Reglas */}
+        {tab === 'reglas' && (
+          <div style={card}>
+            <h2 style={{ fontFamily: 'var(--font-display, Syne, sans-serif)', fontSize: '1rem', fontWeight: 700, marginBottom: 4 }}>
+              📋 Reglas de puntuación
+            </h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+              Así se calculan los puntos en <strong style={{ color: 'var(--white)' }}>{grupo.nombre}</strong>
+            </p>
 
+            {/* Puntuación base */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--purple-light)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                Puntuación base
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { label: '🎯 Marcador exacto',    valor: grupo.pts_marcador_exacto,  desc: 'Aciertas el resultado exacto' },
+                  { label: '✅ Ganador acertado',   valor: grupo.pts_ganador,          desc: 'Aciertas quién gana' },
+                  { label: '🤝 Empate acertado',    valor: grupo.pts_empate,           desc: 'Predices el empate' },
+                  { label: '⚽ Gol acertado',       valor: grupo.pts_gol,              desc: 'Por cada gol exacto' },
+                  { label: '💎 Predicción única',   valor: grupo.pts_prediccion_unica, desc: 'Nadie más apostó igual' },
+                ].map(r => (
+                  <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{r.label}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{r.desc}</div>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display, Syne, sans-serif)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)', flexShrink: 0, marginLeft: 12 }}>
+                      +{r.valor} pts
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bonos eliminatorias */}
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                ⭐ Bonos fase eliminatoria
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { label: 'Dieciseisavos', valor: grupo.bono_dieciseisavos },
+                  { label: 'Octavos',       valor: grupo.bono_octavos },
+                  { label: 'Cuartos',       valor: grupo.bono_cuartos },
+                  { label: 'Semifinales',   valor: grupo.bono_semifinales },
+                  { label: 'Final',         valor: grupo.bono_final },
+                ].map(b => (
+                  <div key={b.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.15)' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>🏆 {b.label}</div>
+                    <div style={{ fontFamily: 'var(--font-display, Syne, sans-serif)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>
+                      +{b.valor} pts
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       <BottomNav />
     </div>
   );
