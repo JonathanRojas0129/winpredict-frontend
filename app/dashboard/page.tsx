@@ -66,7 +66,7 @@ export default function DashboardPage() {
         data.map(async (g) => {
           try {
             const r = await api.get(`/ranking/${g.id}`);
-            rankings[g.id] = r.data.slice(0, 3);
+            rankings[g.id] = r.data;
           } catch {
             rankings[g.id] = [];
           }
@@ -81,11 +81,15 @@ export default function DashboardPage() {
   };
 
   const totalPuntos = grupos.reduce((sum, g) => sum + (g.mis_puntos ?? 0), 0);
-  const posicionesValidas = grupos
-    .map(g => g.mi_posicion)
-    .filter((p): p is number => typeof p === 'number' && p > 0);
+  const posicionesValidas = grupos.map(g => {
+    const ranking = rankingsPorGrupo[g.id] ?? [];
+    const yo = ranking.find(p => p.es_yo);
+    return yo?.posicion ?? null;
+  }).filter((p): p is number => typeof p === 'number' && p > 0);
   const mejorPosicion = posicionesValidas.length > 0 ? Math.min(...posicionesValidas) : null;
   const totalAciertos = grupos.reduce((sum, g) => sum + (g.mis_puntos > 0 ? 1 : 0), 0);
+
+
 
   if (!hydrated) {
     return (
@@ -362,7 +366,7 @@ export default function DashboardPage() {
                   {/* Mini ranking */}
                   {topRanking.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {topRanking.map((p, i) => (
+                      {topRanking.slice(0, 3).map((p, i) => (
                         <div key={p.nombre} style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                         }}>
