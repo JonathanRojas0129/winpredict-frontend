@@ -77,11 +77,11 @@ const FASES_LABEL: Record<string, string> = {
 };
 
 const FASES_BONO: Record<string, string> = {
-  dieciseisavos: 'Bono Dieciseisavos',
-  octavos:       'Bono Octavos',
-  cuartos:       'Bono Cuartos',
-  semifinal:     'Bono Semifinales',
-  final:         'Bono Final',
+  dieciseisavos: 'Bono Octavos',
+  octavos:       'Bono Cuartos',
+  cuartos:       'Bono Semifinales',
+  semifinal:     'Bono Final',
+  final:         'Bono Campeon',
 };
 
 type FiltroEstado = 'todos' | 'programado' | 'vivo' | 'finalizado';
@@ -430,7 +430,7 @@ export default function PartidosPage() {
         ) : abierto ? (
           <div>
             {/* Sugerencia PRO */}
-            {user.es_pro && sug && partido.fase === 'grupos' && (
+            {user.es_pro && sug && ['grupos', 'dieciseisavos'].includes(partido.fase) && (
               <div style={{ background: C.goldMuted, border: `1px solid rgba(245,200,66,0.25)`, borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
                 <div style={{ fontSize: '0.65rem', color: C.gold, fontWeight: 700, marginBottom: 8, letterSpacing: 0.5 }}>
                   ⭐ PREDICCIÓN ESTADÍSTICA IA
@@ -498,7 +498,7 @@ export default function PartidosPage() {
                 <div style={{ fontSize: '0.72rem', color: C.purpleLight, fontWeight: 700, marginBottom: 8 }}>
                   ⚽ Empate — ¿Quién clasifica?
                   {FASES_BONO[partido.fase] && (
-                    <span style={{ color: C.gold, marginLeft: 6 }}>· Acierta y ganas el {FASES_BONO[partido.fase]}</span>
+                    <span style={{ color: C.gold, marginLeft: 6 }}>· Acierta quién avanza y ganas el {FASES_BONO[partido.fase]}</span>
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
