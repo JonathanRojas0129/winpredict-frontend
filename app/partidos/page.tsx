@@ -430,7 +430,7 @@ export default function PartidosPage() {
         ) : abierto ? (
           <div>
             {/* Sugerencia PRO */}
-            {user.es_pro && sug && ['grupos', 'dieciseisavos', 'octavos', 'cuartos'].includes(partido.fase) && (
+            {user.es_pro && sug && ['grupos', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal'].includes(partido.fase) && (
               <div style={{ background: C.goldMuted, border: `1px solid rgba(245,200,66,0.25)`, borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
                 <div style={{ fontSize: '0.65rem', color: C.gold, fontWeight: 700, marginBottom: 8, letterSpacing: 0.5 }}>
                   ⭐ PREDICCIÓN ESTADÍSTICA IA
