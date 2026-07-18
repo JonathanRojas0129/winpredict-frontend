@@ -64,7 +64,7 @@ const C = {
 };
 
 const FASES_ORDEN = ['grupos', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
-const FASES_ELIMINATORIAS = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final'];
+const FASES_ELIMINATORIAS = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'tercer_puesto', 'final'];
 
 const FASES_LABEL: Record<string, string> = {
   grupos:        'Fase de Grupos',
